@@ -1,8 +1,8 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import Index from '../index'; // Sua tela Home
-import About from '../about';
+import Index from '../app/index'; // Sua tela Home
+import About from '../app/about';
 
 export type StackParamList = {
   index: undefined;

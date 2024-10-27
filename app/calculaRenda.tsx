@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, Modal, Pressable, TextInput, Alert } from 'react-native';
-import Navbar from '../components/Navbar';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Modal, Pressable, TextInput } from 'react-native';
+import Navbar from '../components/navbarCalculaRenda';
 import Footer from '../components/Footer';
 
 interface IncomeType {
@@ -15,75 +15,50 @@ const IncomeTable: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedType, setSelectedType] = useState<'Fixa' | 'Variada' | null>(null);
   const [salary, setSalary] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [itemDetail, setItemDetail] = useState('');
+  const [itemAmount, setItemAmount] = useState<number | null>(null);
 
-  // Opções de renda fixa e variada com valores médios
-  const fixedOptions = [
-    { detail: 'Conta de Luz', amount: 100 },
-    { detail: 'Conta de Água', amount: 70 },
-    { detail: 'Aluguel', amount: 1200 },
-  ];
-
-  const variedOptions = [
-    { detail: 'Compras Mensais', amount: 500 },
-    { detail: 'Transporte', amount: 150 },
-    { detail: 'Entretenimento', amount: 200 },
-  ];
-
-  const addIncomeType = (option: { detail: string; amount: number }) => {
-    if (selectedType) {
+  const addIncomeType = () => {
+    if (selectedType && itemDetail && itemAmount !== null) {
       const newIncomeType: IncomeType = {
         id: incomeTypes.length + 1,
         type: selectedType,
-        detail: option.detail,
-        amount: option.amount,
+        detail: itemDetail,
+        amount: itemAmount,
       };
       setIncomeTypes([...incomeTypes, newIncomeType]);
-      setModalVisible(false); // Fechar modal
-      setSelectedType(null);  // Limpar seleção
+      setModalVisible(false);
+      setSelectedType(null);
+      setItemDetail(''); // Limpa o campo de detalhe
+      setItemAmount(null); // Limpa o campo de valor
     }
   };
 
   const openTypeSelection = (type: 'Fixa' | 'Variada') => {
     setSelectedType(type);
-    setModalVisible(true); // Abrir modal para escolher o detalhe
+    setModalVisible(true);
   };
 
-  // Função para calcular o valor total dos gastos
   const calculateTotal = () => {
     return incomeTypes.reduce((acc, item) => acc + item.amount, 0);
   };
 
-  // Função para calcular a diferença entre salário e gastos
-  const calculateRemaining = () => {
-    if (salary !== null) {
-      const total = calculateTotal();
-      return salary - total;
-    }
-    return null;
-  };
-
   const handleSalarySubmit = () => {
-    const remaining = calculateRemaining();
-    if (remaining !== null) {
-      Alert.alert(
-        'Resultado',
-        remaining >= 0
-          ? `Você ainda tem R$ ${remaining.toFixed(2)} disponíveis após os gastos.`
-          : `Você está com R$ ${Math.abs(remaining).toFixed(2)} em déficit após os gastos.`
-      );
+    if (salary !== null) {
+      const totalExpenses = calculateTotal();
+      setRemaining(salary - totalExpenses);
     }
   };
 
   return (
     <View style={styles.container}>
       <Navbar />
-      {/* Tabela de tipos de renda */}
       <FlatList
         data={incomeTypes}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.row}>
-            <Text style={styles.cell}>{item.id}</Text>
             <Text style={styles.cell}>{item.type}</Text>
             <Text style={styles.cell}>{item.detail}</Text>
             <Text style={styles.cell}>R$ {item.amount.toFixed(2)}</Text>
@@ -91,19 +66,16 @@ const IncomeTable: React.FC = () => {
         )}
         ListFooterComponent={
           <>
-            {/* Botão New */}
             <View style={styles.footer}>
               <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-                <Text style={styles.buttonText}>New</Text>
+                <Text style={styles.buttonText}>Novo</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Total dos gastos */}
             <View style={styles.totalContainer}>
               <Text style={styles.totalText}>Total de Gastos: R$ {calculateTotal().toFixed(2)}</Text>
             </View>
 
-            {/* Campo de entrada para a renda salarial */}
             <View style={styles.salaryContainer}>
               <Text style={styles.salaryLabel}>Informe sua renda salarial:</Text>
               <TextInput
@@ -116,12 +88,18 @@ const IncomeTable: React.FC = () => {
               <TouchableOpacity style={styles.submitButton} onPress={handleSalarySubmit}>
                 <Text style={styles.buttonText}>Calcular Diferença</Text>
               </TouchableOpacity>
+              {remaining !== null && (
+                <Text style={styles.remainingText}>
+                  {remaining >= 0
+                    ? `Você ainda tem R$ ${remaining.toFixed(2)} disponíveis. \nSeria interessante voce usar esse dinheiro para realizar um investimento.\n\nSegue algumas dicas de investimento.\n\n- Investimento em renda fixa\n- Investimento em Imóveis\n- Fundos imobiliarios`
+                    : `Você está com R$ ${Math.abs(remaining).toFixed(2)} em déficit. É necessario que você faça uma reorganização financeira.\n\n- Cortar Gastos denecessarios\n- Fazer uma reserva de emergencia\n- Planejar Compras para evitar dividas.`}
+                </Text>
+              )}
             </View>
           </>
         }
       />
 
-      {/* Modal para seleção de Fixa ou Variada */}
       {modalVisible && (
         <Modal
           transparent={true}
@@ -140,24 +118,30 @@ const IncomeTable: React.FC = () => {
               </TouchableOpacity>
 
               {selectedType && (
-                <View>
-                  <Text style={styles.modalSubtitle}>Selecione uma opção:</Text>
-                  {(selectedType === 'Fixa' ? fixedOptions : variedOptions).map((option) => (
-                    <TouchableOpacity
-                      key={option.detail}
-                      style={styles.optionButton}
-                      onPress={() => addIncomeType(option)}
-                    >
-                      <Text style={styles.optionText}>
-                        {option.detail} - R$ {option.amount.toFixed(2)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                <View style={styles.formContainer}>
+                  <Text style={styles.modalSubtitle}>Dispesa:</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ex: Conta de Luz"
+                    value={itemDetail}
+                    onChangeText={setItemDetail}
+                  />
+                  <Text style={styles.modalSubtitle}>Valor:</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ex: 100"
+                    keyboardType="numeric"
+                    value={itemAmount ? itemAmount.toString() : ''}
+                    onChangeText={(value) => setItemAmount(parseFloat(value))}
+                  />
+                  <TouchableOpacity style={styles.submitButton} onPress={addIncomeType}>
+                    <Text style={styles.buttonText}>Salvar</Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
               <Pressable style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.closeButton}>Fechar</Text>
+                <Text style={styles.closeButtonText}>Fechar</Text>
               </Pressable>
             </View>
           </View>
@@ -226,10 +210,26 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   submitButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#28a745', // Cor original
     paddingVertical: 10,
-    paddingHorizontal: 30,
+    paddingHorizontal: 20,
     borderRadius: 5,
+    marginVertical: 5,
+    width: '100%',
+    alignItems: 'center',
+  },
+  buttonHover: {
+    backgroundColor: '#4CAF50', // Cor mais clara quando pressionado
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+
+  remainingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
   },
   modalContainer: {
     flex: 1,
@@ -253,8 +253,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginVertical: 10,
   },
+  formContainer: {
+    width: '100%',
+    marginTop: 10,
+  },
+  input: {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 10,
+  },
   optionButton: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#007bff', // Azul
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -262,16 +274,22 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
+  
   optionText: {
     fontSize: 16,
+    color: '#fff', // Branco
   },
   closeButton: {
     marginTop: 20,
     paddingVertical: 10,
     paddingHorizontal: 30,
     backgroundColor: '#ff3333',
-    borderRadius: 5
-  }
-})
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+});
 
 export default IncomeTable;

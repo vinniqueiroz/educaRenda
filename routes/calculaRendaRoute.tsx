@@ -1,8 +1,8 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import Index from '../index';
-import CalculaRenda from '../calculaRenda';
+import Index from '../app/index';
+import CalculaRenda from '../app/calculaRenda';
 
 export type StackParamList = {
   index: undefined;

@@ -11,9 +11,6 @@ const Navbar = () => {
       <TouchableOpacity onPress={() => navigation.navigate('index')}>
         <Text style={styles.title}>Home</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('about')}>
-        <Text style={styles.title}>About</Text>
-      </TouchableOpacity>
     </View>
   );
 };
